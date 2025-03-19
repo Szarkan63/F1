@@ -31,6 +31,7 @@ import com.example.fryzjer.screens.ReservationsScreen
 import com.example.fryzjer.ui.RegisterScreen
 import com.example.fryzjer.ui.theme.FryzjerTheme
 import com.example.fryzjer.data.model.UserViewModel
+import com.example.fryzjer.screens.RacesScreen
 
 
 class MainActivity : ComponentActivity() {
@@ -42,8 +43,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             val userViewModel: UserViewModel = viewModel()
-
-
             FryzjerTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -79,6 +78,9 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("adminPanel") {
                                 AdminPanelScreen(navController = navController)
+                            }
+                            composable("Races") {
+                                RacesScreen(navController = navController)
                             }
                         }
                     }
