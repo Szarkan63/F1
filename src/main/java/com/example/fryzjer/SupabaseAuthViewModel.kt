@@ -19,8 +19,9 @@ class SupabaseAuthViewModel : ViewModel() {
     private val _userState = mutableStateOf<UserState>(UserState.Loading)
     val userState: State<UserState> = _userState
 
-    private val client=SupabaseClient.auth
-    private val supabase=SupabaseClient.supabase
+    private val client = SupabaseClient.auth
+    private val supabase = SupabaseClient.supabase
+
     // Funkcja do walidacji emaila
     private fun isValidEmail(email: String): Boolean {
         val emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$"
@@ -38,7 +39,7 @@ class SupabaseAuthViewModel : ViewModel() {
             _userState.value = UserState.Loading
 
             if (!isValidEmail(userEmail)) {
-                _userState.value = UserState.Error("Invalid email format.")
+                _userState.value = UserState.Error("Nieprawidłowy format adresu email.")
                 return@launch
             }
 
@@ -53,38 +54,36 @@ class SupabaseAuthViewModel : ViewModel() {
                 }
 
                 if (result != null) {
-                    _userState.value = UserState.Error("Error occurred during registration.")
+                    _userState.value = UserState.Error("Wystąpił błąd podczas rejestracji.")
                 } else {
                     saveToken(context)
                     // Przekazujemy flagę `isRegistration = true`, aby wyzwolić nawigację w MainScreen
-                    _userState.value = UserState.Success("Registered user successfully!", isRegistration = true)
+                    _userState.value = UserState.Success("Rejestracja zakończona pomyślnie!", isRegistration = true)
                 }
             } catch (e: Exception) {
-                _userState.value = UserState.Error("Error: ${e.message}")
+                _userState.value = UserState.Error("Błąd: ${e.message}")
             }
         }
     }
 
-    // Save the current token to SharedPreferences
+    // Zapis tokena do SharedPreferences
     private fun saveToken(context: Context) {
         viewModelScope.launch {
             try {
-                // Check if the auth client has a different method for obtaining the current session
-                val session = client.currentSessionOrNull() // Replace with actual method
+                val session = client.currentSessionOrNull()
 
                 if (session?.accessToken != null) {
                     val accessToken = session.accessToken
                     val sharedPref = SharedPreferenceHelper(context)
                     sharedPref.saveStringData("accessToken", accessToken)
                 } else {
-                    _userState.value = UserState.Error("Error: Access token not found")
+                    _userState.value = UserState.Error("Błąd: Nie znaleziono tokena dostępu.")
                 }
             } catch (e: Exception) {
-                _userState.value = UserState.Error("Error: ${e.message}")
+                _userState.value = UserState.Error("Błąd: ${e.message}")
             }
         }
     }
-
 
     fun login(
         context: Context,
@@ -92,45 +91,44 @@ class SupabaseAuthViewModel : ViewModel() {
         userPassword: String
     ) {
         viewModelScope.launch {
-            _userState.value=UserState.Loading
+            _userState.value = UserState.Loading
             try {
-                client.signInWith(Email){
-                    email=userEmail
-                    password=userPassword
+                client.signInWith(Email) {
+                    email = userEmail
+                    password = userPassword
                 }
                 saveToken(context)
-                _userState.value=UserState.Success("Logged in succesfully!",isRegistration = false)
-        } catch (e: Exception){
-            _userState.value=UserState.Error("Error: ${e.message}")
+                _userState.value = UserState.Success("Zalogowano pomyślnie!", isRegistration = false)
+            } catch (e: Exception) {
+                _userState.value = UserState.Error("Błąd: ${e.message}")
             }
         }
     }
 
-
-    // Logout method
+    // Wylogowanie
     fun logout(context: Context) {
         val sharedPref = SharedPreferenceHelper(context)
         viewModelScope.launch {
             _userState.value = UserState.Loading
             try {
-                // Check if user is logged in
+                // Sprawdź, czy użytkownik jest zalogowany
                 val token = getToken(context)
                 if (token.isNullOrEmpty()) {
-                    _userState.value = UserState.Error("Nie mozesz sie wylogowac,nie jest zalogowany!")
+                    _userState.value = UserState.Error("Nie możesz się wylogować, ponieważ nie jesteś zalogowany!")
                     return@launch
                 }
 
-                // Proceed with logout if the user is logged in
+                // Wyloguj użytkownika
                 client.signOut()
                 sharedPref.clearPreferences()
-                _userState.value = UserState.Success("Nie jest zalogowany!")
+                _userState.value = UserState.Success("Wylogowano pomyślnie!")
             } catch (e: Exception) {
-                _userState.value = UserState.Error("Error: ${e.message}")
+                _userState.value = UserState.Error("Błąd: ${e.message}")
             }
         }
     }
 
-    // Check if the user is logged in
+    // Sprawdź, czy użytkownik jest zalogowany
     fun isUserLoggedIn(
         context: Context
     ) {
@@ -138,26 +136,24 @@ class SupabaseAuthViewModel : ViewModel() {
             try {
                 val token = getToken(context)
                 if (token.isNullOrEmpty()) {
-                    _userState.value = UserState.Error("User is not logged in!")
+                    _userState.value = UserState.Error("Użytkownik nie jest zalogowany!")
+                } else {
+                    client.retrieveUser(token)
+                    client.refreshCurrentSession()
+                    saveToken(context)
+                    _userState.value = UserState.Success("Użytkownik jest już zalogowany!")
                 }
-                    else {
-                        client.retrieveUser(token)
-                        client.refreshCurrentSession()
-                         saveToken(context)
-                        _userState.value = UserState.Success("User is already logged in!")
-                    }
             } catch (e: Exception) {
-                _userState.value = UserState.Error("Error: ${e.message}")
+                _userState.value = UserState.Error("Błąd: ${e.message}")
             }
         }
     }
 
-    // Retrieve the token from SharedPreferences
+    // Pobierz token z SharedPreferences
     private fun getToken(context: Context): String? {
         val sharedPref = SharedPreferenceHelper(context)
         return sharedPref.getStringData("accessToken")
     }
-
 }
 
 
