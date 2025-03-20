@@ -31,6 +31,7 @@ import com.example.fryzjer.screens.ReservationsScreen
 import com.example.fryzjer.ui.RegisterScreen
 import com.example.fryzjer.ui.theme.FryzjerTheme
 import com.example.fryzjer.data.model.UserViewModel
+import com.example.fryzjer.screens.AddRaceScreen
 import com.example.fryzjer.screens.RacesScreen
 
 
@@ -81,6 +82,9 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("Races") {
                                 RacesScreen(navController = navController)
+                            }
+                            composable("addRaceScreen") { // Dodaj nową trasę dla AddRaceScreen
+                                AddRaceScreen(navController = navController)
                             }
                         }
                     }

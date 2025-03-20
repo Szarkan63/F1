@@ -86,7 +86,7 @@ fun HomeScreen(
                     .background(
                         brush = Brush.verticalGradient(
                             colors = listOf(
-                                MaterialTheme.colorScheme.primary,
+                                Color.Cyan,
                                 MaterialTheme.colorScheme.secondary
                             )
                         )
@@ -133,7 +133,7 @@ fun AnimatedWelcomeText(username: String) {
     val infiniteTransition = rememberInfiniteTransition()
     val color by infiniteTransition.animateColor(
         initialValue = Color.Red,
-        targetValue = Color.Blue,
+        targetValue = Color.Yellow,
         animationSpec = infiniteRepeatable(
             animation = tween(1000, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
