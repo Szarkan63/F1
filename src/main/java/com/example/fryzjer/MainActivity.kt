@@ -34,7 +34,6 @@ import com.example.fryzjer.data.model.UserViewModel
 import com.example.fryzjer.screens.AddRaceScreen
 import com.example.fryzjer.screens.RacesScreen
 
-
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -78,12 +77,15 @@ class MainActivity : ComponentActivity() {
                                 ReservationsScreen(navController = navController)
                             }
                             composable("adminPanel") {
-                                AdminPanelScreen(navController = navController)
+                                AdminPanelScreen(
+                                    navController = navController,
+                                    userId = userViewModel.userId.value.toString() // Pass userId here
+                                )
                             }
                             composable("Races") {
                                 RacesScreen(navController = navController)
                             }
-                            composable("addRaceScreen") { // Dodaj nową trasę dla AddRaceScreen
+                            composable("addRaceScreen") {
                                 AddRaceScreen(navController = navController)
                             }
                         }
@@ -93,17 +95,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
