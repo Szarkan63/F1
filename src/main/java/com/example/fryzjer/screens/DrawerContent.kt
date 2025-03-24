@@ -65,6 +65,24 @@ fun DrawerContent(
             onClick = { navController.navigate("races") },
             modifier = Modifier.padding(vertical = 8.dp)
         )
+        DrawerItem(
+            icon = Icons.Rounded.Person,
+            label = "Klasyfikacja generalna kierowców",
+            onClick = { navController.navigate("DriverStandingsScreen") },
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
+        DrawerItem(
+            icon = Icons.Rounded.Groups,
+            label = "Klasyfikacja generalna zespołów",
+            onClick = { navController.navigate("TeamStandingsScreen") },
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
+        DrawerItem(
+            icon = Icons.Rounded.Flag,
+            label = "Wyniki wyścigów",
+            onClick = { navController.navigate("RaceResultsScreen") },
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
 
         // Panel administratora (tylko dla adminów)
         if (isAdmin) {

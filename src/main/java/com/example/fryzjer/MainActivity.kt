@@ -35,7 +35,10 @@ import com.example.fryzjer.screens.AddDriverScreen
 import com.example.fryzjer.screens.AddRaceScreen
 import com.example.fryzjer.screens.AddResultsScreen
 import com.example.fryzjer.screens.AddTeamScreen
+import com.example.fryzjer.screens.DriverStandingsScreen
+import com.example.fryzjer.screens.RaceResultsScreen
 import com.example.fryzjer.screens.RacesScreen
+import com.example.fryzjer.screens.TeamStandingsScreen
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
@@ -99,6 +102,15 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("addResultsScreen") {
                                 AddResultsScreen(navController = navController)
+                            }
+                            composable("DriverStandingsScreen") {
+                                DriverStandingsScreen(navController = navController)
+                            }
+                            composable("TeamStandingsScreen") {
+                                TeamStandingsScreen(navController = navController)
+                            }
+                            composable("RaceResultsScreen") {
+                                RaceResultsScreen(navController = navController)
                             }
                         }
                     }

@@ -26,7 +26,6 @@ fun AddResultsScreen(
     var selectedRace by remember { mutableStateOf<Race?>(null) }
     var selectedDriver by remember { mutableStateOf<Driver?>(null) }
     var position by remember { mutableStateOf("") }
-    var points by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
     var isDialogOpen by remember { mutableStateOf(false) }
     var isEditMode by remember { mutableStateOf(false) }
@@ -43,6 +42,23 @@ fun AddResultsScreen(
     var isRaceMenuExpanded by remember { mutableStateOf(false) }
     var isDriverMenuExpanded by remember { mutableStateOf(false) }
     var isResultMenuExpanded by remember { mutableStateOf(false) }
+
+    // Funkcja obliczająca punkty na podstawie pozycji
+    fun calculatePoints(position: Int): Int {
+        return when (position) {
+            1 -> 25
+            2 -> 18
+            3 -> 15
+            4 -> 12
+            5 -> 10
+            6 -> 8
+            7 -> 6
+            8 -> 4
+            9 -> 2
+            10 -> 1
+            else -> 0
+        }
+    }
 
     // Funkcja odświeżająca dane
     suspend fun refreshData() {
@@ -67,7 +83,7 @@ fun AddResultsScreen(
     fun formatResultDisplay(result: RaceResult): String {
         val race = races.find { it.race_id == result.race_id }
         val driver = drivers.find { it.driver_id == result.driver_id }
-        return "${race?.race_name ?: "Nieznany wyścig"} - ${driver?.let { "${it.first_name} ${it.last_name}" } ?: "Nieznany kierowca"} (Pozycja: ${result.position})"
+        return "${race?.race_name ?: "Nieznany wyścig"} - ${driver?.let { "${it.first_name} ${it.last_name}" } ?: "Nieznany kierowca"} (Pozycja: ${result.position}, Punkty: ${result.points})"
     }
 
     // Obsługa menu bocznego
@@ -119,7 +135,6 @@ fun AddResultsScreen(
                         selectedRace = null
                         selectedDriver = null
                         position = ""
-                        points = ""
                     },
                     modifier = Modifier.padding(bottom = 16.dp)
                 ) {
@@ -190,7 +205,6 @@ fun AddResultsScreen(
                                         onClick = {
                                             selectedResultId = result.result_id
                                             position = result.position.toString()
-                                            points = result.points.toString()
                                             selectedRace = races.find { it.race_id == result.race_id }
                                             selectedDriver = drivers.find { it.driver_id == result.driver_id }
                                             isResultMenuExpanded = false
@@ -314,25 +328,44 @@ fun AddResultsScreen(
 
                     OutlinedTextField(
                         value = position,
-                        onValueChange = { if (it.isEmpty() || it.toIntOrNull() != null) position = it },
-                        label = { Text("Pozycja*") },
-                        modifier = Modifier.fillMaxWidth()
+                        onValueChange = {
+                            if (it.isEmpty() || (it.toIntOrNull() != null && it.toInt() in 1..20)) {
+                                position = it
+                            }
+                        },
+                        label = { Text("Pozycja (1-20)*") },
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = position.isNotEmpty() && (position.toIntOrNull() == null || position.toInt() !in 1..20),
+                        supportingText = {
+                            if (position.isNotEmpty() && (position.toIntOrNull() == null || position.toInt() !in 1..20)) {
+                                Text("Pozycja musi być liczbą od 1 do 20")
+                            }
+                        }
                     )
 
-                    OutlinedTextField(
-                        value = points,
-                        onValueChange = { if (it.isEmpty() || it.toIntOrNull() != null) points = it },
-                        label = { Text("Punkty*") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    if (position.isNotEmpty() && position.toIntOrNull() in 1..20) {
+                        Text(
+                            text = "Zdobyte punkty: ${calculatePoints(position.toInt())}",
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
-                        if (selectedRace == null || selectedDriver == null || position.isEmpty() || points.isEmpty()) {
+                        if (selectedRace == null || selectedDriver == null || position.isEmpty()) {
                             CoroutineScope(Dispatchers.Main).launch {
                                 snackbarHostState.showSnackbar("Proszę uzupełnić wszystkie wymagane pola")
+                            }
+                            return@Button
+                        }
+
+                        val positionInt = position.toIntOrNull()
+                        if (positionInt == null || positionInt !in 1..20) {
+                            CoroutineScope(Dispatchers.Main).launch {
+                                snackbarHostState.showSnackbar("Pozycja musi być liczbą od 1 do 20")
                             }
                             return@Button
                         }
@@ -342,8 +375,8 @@ fun AddResultsScreen(
                                 val resultInput = RaceResultInput(
                                     race_id = selectedRace!!.race_id,
                                     driver_id = selectedDriver!!.driver_id,
-                                    position = position.toInt(),
-                                    points = points.toInt()
+                                    position = positionInt,
+                                    points = calculatePoints(positionInt)
                                 )
 
                                 if (isEditMode && selectedResultId != null) {
