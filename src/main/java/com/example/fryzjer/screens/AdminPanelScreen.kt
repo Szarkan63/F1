@@ -86,6 +86,26 @@ fun AdminPanelScreen(
                         }
                         .padding(8.dp)
                 )
+                Text(
+                    text = "Dodaj kierowców",
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier
+                        .clickable {
+                            // Przejście do ekranu dodawania wyścigu
+                            navController.navigate("addDriverScreen")
+                        }
+                        .padding(8.dp)
+                )
+                Text(
+                    text = "Dodaj drużyny",
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier
+                        .clickable {
+                            // Przejście do ekranu dodawania wyścigu
+                            navController.navigate("addTeamScreen")
+                        }
+                        .padding(8.dp)
+                )
             }
         }
     }

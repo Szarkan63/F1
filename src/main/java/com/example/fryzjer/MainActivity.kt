@@ -31,7 +31,9 @@ import com.example.fryzjer.screens.ReservationsScreen
 import com.example.fryzjer.ui.RegisterScreen
 import com.example.fryzjer.ui.theme.FryzjerTheme
 import com.example.fryzjer.data.model.UserViewModel
+import com.example.fryzjer.screens.AddDriverScreen
 import com.example.fryzjer.screens.AddRaceScreen
+import com.example.fryzjer.screens.AddTeamScreen
 import com.example.fryzjer.screens.RacesScreen
 
 class MainActivity : ComponentActivity() {
@@ -87,6 +89,12 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("addRaceScreen") {
                                 AddRaceScreen(navController = navController)
+                            }
+                            composable("addDriverScreen") {
+                                AddDriverScreen(navController = navController)
+                            }
+                            composable("addTeamScreen") {
+                                AddTeamScreen(navController = navController)
                             }
                         }
                     }
