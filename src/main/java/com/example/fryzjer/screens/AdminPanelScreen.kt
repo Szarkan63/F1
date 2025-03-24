@@ -106,6 +106,16 @@ fun AdminPanelScreen(
                         }
                         .padding(8.dp)
                 )
+                Text(
+                    text = "Dodaj rezultaty wyścigów",
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier
+                        .clickable {
+                            // Przejście do ekranu dodawania wyścigu
+                            navController.navigate("addResultsScreen")
+                        }
+                        .padding(8.dp)
+                )
             }
         }
     }

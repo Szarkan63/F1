@@ -33,6 +33,7 @@ import com.example.fryzjer.ui.theme.FryzjerTheme
 import com.example.fryzjer.data.model.UserViewModel
 import com.example.fryzjer.screens.AddDriverScreen
 import com.example.fryzjer.screens.AddRaceScreen
+import com.example.fryzjer.screens.AddResultsScreen
 import com.example.fryzjer.screens.AddTeamScreen
 import com.example.fryzjer.screens.RacesScreen
 
@@ -95,6 +96,9 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("addTeamScreen") {
                                 AddTeamScreen(navController = navController)
+                            }
+                            composable("addResultsScreen") {
+                                AddResultsScreen(navController = navController)
                             }
                         }
                     }

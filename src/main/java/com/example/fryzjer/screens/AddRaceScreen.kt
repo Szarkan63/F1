@@ -45,7 +45,7 @@ fun AddRaceScreen(
     // Zmienne stanu dla kalendarza
     var isDatePickerOpen by remember { mutableStateOf(false) }
 
-    // Zmienne stanu dla Snackbar (komunikat o błędzie)
+    // Zmienne stanu dla Snackbar
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Zmienne stanu dla dialogu
@@ -57,26 +57,29 @@ fun AddRaceScreen(
     var isDeleteDialogOpen by remember { mutableStateOf(false) }
     var isDeleteConfirmationDialogOpen by remember { mutableStateOf(false) }
 
-    // Lista wyścigów
-    val races = remember { mutableStateListOf<Race>() }
-    LaunchedEffect(Unit) {
+    // Lista wyścigów i torów
+    var races by remember { mutableStateOf<List<Race>>(emptyList()) }
+    var tracks by remember { mutableStateOf<List<Track>>(emptyList()) }
+
+    // Funkcja do odświeżania danych
+    suspend fun refreshData() {
         try {
             val raceResponse = F1Repository.getAllRaces()
-            races.addAll(raceResponse.decodeList<Race>())
+            races = raceResponse.decodeList<Race>()
+
+            val trackResponse = F1Repository.getAllTracks()
+            tracks = trackResponse.decodeList<Track>()
         } catch (e: Exception) {
-            Log.e("AddRaceScreen", "Error fetching races", e)
+            Log.e("AddRaceScreen", "Error fetching data", e)
+            withContext(Dispatchers.Main) {
+                snackbarHostState.showSnackbar("Błąd podczas ładowania danych")
+            }
         }
     }
 
-    // Pobierz listę torów z bazy danych
-    val tracks = remember { mutableStateListOf<Track>() }
+    // Pobierz dane przy pierwszym uruchomieniu
     LaunchedEffect(Unit) {
-        try {
-            val trackResponse = F1Repository.getAllTracks()
-            tracks.addAll(trackResponse.decodeList<Track>())
-        } catch (e: Exception) {
-            Log.e("AddRaceScreen", "Error fetching tracks", e)
-        }
+        refreshData()
     }
 
     // Obsługa menu bocznego
@@ -86,7 +89,6 @@ fun AddRaceScreen(
     BackHandler(enabled = drawerState.isOpen) {
         scope.launch {
             drawerState.close()
-            Log.d("Drawer", "Drawer closed")
         }
     }
 
@@ -94,10 +96,7 @@ fun AddRaceScreen(
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
-                DrawerContent(
-                    navController = navController,
-                    userId = null // Możesz przekazać userId, jeśli jest potrzebne
-                )
+                DrawerContent(navController = navController, userId = null)
             }
         }
     ) {
@@ -105,13 +104,7 @@ fun AddRaceScreen(
             topBar = {
                 TopBar(
                     title = "Zarządzanie wyścigami",
-                    onOpenDrawer = {
-                        scope.launch {
-                            drawerState.apply {
-                                if (isClosed) open() else close()
-                            }
-                        }
-                    }
+                    onOpenDrawer = { scope.launch { drawerState.open() } }
                 )
             },
             snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -131,18 +124,21 @@ fun AddRaceScreen(
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                // Przycisk do otwarcia dialogu dodawania wyścigu
                 Button(
                     onClick = {
                         isEditMode = false
                         isDialogOpen = true
+                        // Resetuj formularz
+                        raceName = ""
+                        raceDate = ""
+                        laps = ""
+                        selectedTrack = null
                     },
                     modifier = Modifier.padding(bottom = 16.dp)
                 ) {
                     Text(text = "Dodaj wyścig")
                 }
 
-                // Przycisk do modyfikacji wyścigu
                 Button(
                     onClick = {
                         isEditMode = true
@@ -153,17 +149,13 @@ fun AddRaceScreen(
                     Text(text = "Modyfikuj wyścig")
                 }
 
-                // Przycisk do usuwania wyścigu
                 Button(
-                    onClick = {
-                        isDeleteDialogOpen = true
-                    },
+                    onClick = { isDeleteDialogOpen = true },
                     modifier = Modifier.padding(bottom = 16.dp)
                 ) {
                     Text(text = "Usuń wyścig")
                 }
 
-                // Przycisk powrotu do panelu admina
                 Button(
                     onClick = { navController.popBackStack() },
                     modifier = Modifier.padding(top = 8.dp)
@@ -178,13 +170,10 @@ fun AddRaceScreen(
     if (isDialogOpen) {
         AlertDialog(
             onDismissRequest = { isDialogOpen = false },
-            title = {
-                Text(text = if (isEditMode) "Modyfikuj wyścig" else "Dodaj wyścig")
-            },
+            title = { Text(text = if (isEditMode) "Modyfikuj wyścig" else "Dodaj wyścig") },
             text = {
                 Column {
                     if (isEditMode) {
-                        // Rozwijane menu z listą wyścigów
                         var isRaceMenuExpanded by remember { mutableStateOf(false) }
 
                         ExposedDropdownMenuBox(
@@ -195,7 +184,7 @@ fun AddRaceScreen(
                                 value = selectedRaceId?.let { id ->
                                     races.find { it.race_id == id }?.race_name ?: ""
                                 } ?: "",
-                                onValueChange = { }, // Nie pozwalamy na ręczną edycję
+                                onValueChange = { },
                                 readOnly = true,
                                 label = { Text("Wybierz wyścig") },
                                 modifier = Modifier
@@ -227,7 +216,6 @@ fun AddRaceScreen(
                         }
                     }
 
-                    // Sekcja wyboru toru
                     Text(
                         text = "Wybierz tor",
                         style = MaterialTheme.typography.headlineSmall,
@@ -241,7 +229,7 @@ fun AddRaceScreen(
                     ) {
                         OutlinedTextField(
                             value = selectedTrack?.track_name ?: "",
-                            onValueChange = { }, // Nie pozwalamy na ręczną edycję
+                            onValueChange = { },
                             readOnly = true,
                             label = { Text("Tor") },
                             modifier = Modifier
@@ -268,7 +256,6 @@ fun AddRaceScreen(
                         }
                     }
 
-                    // Sekcja formularza dla wyścigu
                     Text(
                         text = "Dane wyścigu",
                         style = MaterialTheme.typography.headlineSmall,
@@ -279,16 +266,15 @@ fun AddRaceScreen(
                     OutlinedTextField(
                         value = raceName,
                         onValueChange = { raceName = it },
-                        label = { Text("Nazwa wyścigu") },
+                        label = { Text("Nazwa wyścigu*") },
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Przyciski do wyboru daty
                     OutlinedTextField(
                         value = raceDate,
-                        onValueChange = { }, // Nie pozwalamy na ręczną edycję
+                        onValueChange = { },
                         readOnly = true,
-                        label = { Text("Data wyścigu") },
+                        label = { Text("Data wyścigu*") },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp)
@@ -300,7 +286,6 @@ fun AddRaceScreen(
                         }
                     )
 
-                    // Kalendarz DatePickerDialog
                     if (isDatePickerOpen) {
                         val calendar = Calendar.getInstance()
                         val year = calendar.get(Calendar.YEAR)
@@ -321,7 +306,7 @@ fun AddRaceScreen(
                     OutlinedTextField(
                         value = laps,
                         onValueChange = { laps = it },
-                        label = { Text("Liczba okrążeń") },
+                        label = { Text("Liczba okrążeń*") },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -331,7 +316,7 @@ fun AddRaceScreen(
                     onClick = {
                         if (selectedTrack == null || raceName.isEmpty() || raceDate.isEmpty() || laps.isEmpty()) {
                             CoroutineScope(Dispatchers.Main).launch {
-                                snackbarHostState.showSnackbar("Proszę uzupełnić wszystkie pola")
+                                snackbarHostState.showSnackbar("Proszę uzupełnić wszystkie wymagane pola")
                             }
                             return@Button
                         }
@@ -348,18 +333,24 @@ fun AddRaceScreen(
                             try {
                                 if (isEditMode && selectedRaceId != null) {
                                     F1Repository.updateRace(selectedRaceId!!, raceInput)
+                                    refreshData()
                                     withContext(Dispatchers.Main) {
                                         snackbarHostState.showSnackbar("Wyścig został zaktualizowany")
+                                        isDialogOpen = false
                                     }
                                 } else {
                                     F1Repository.createRace(raceInput)
+                                    refreshData()
                                     withContext(Dispatchers.Main) {
                                         snackbarHostState.showSnackbar("Wyścig został dodany")
+                                        isDialogOpen = false
                                     }
                                 }
-                                isDialogOpen = false
                             } catch (e: Exception) {
                                 Log.e("AddRaceScreen", "Error saving race", e)
+                                withContext(Dispatchers.Main) {
+                                    snackbarHostState.showSnackbar("Błąd podczas zapisywania danych")
+                                }
                             }
                         }
                     }
@@ -381,12 +372,9 @@ fun AddRaceScreen(
     if (isDeleteDialogOpen) {
         AlertDialog(
             onDismissRequest = { isDeleteDialogOpen = false },
-            title = {
-                Text(text = "Usuń wyścig")
-            },
+            title = { Text(text = "Usuń wyścig") },
             text = {
                 Column {
-                    // Rozwijane menu z listą wyścigów
                     var isRaceMenuExpanded by remember { mutableStateOf(false) }
 
                     ExposedDropdownMenuBox(
@@ -397,7 +385,7 @@ fun AddRaceScreen(
                             value = selectedRaceId?.let { id ->
                                 races.find { it.race_id == id }?.race_name ?: ""
                             } ?: "",
-                            onValueChange = { }, // Nie pozwalamy na ręczną edycję
+                            onValueChange = { },
                             readOnly = true,
                             label = { Text("Wybierz wyścig") },
                             modifier = Modifier
@@ -455,12 +443,8 @@ fun AddRaceScreen(
     if (isDeleteConfirmationDialogOpen) {
         AlertDialog(
             onDismissRequest = { isDeleteConfirmationDialogOpen = false },
-            title = {
-                Text(text = "Czy na pewno usunąć wyścig?")
-            },
-            text = {
-                Text("Ta operacja jest nieodwracalna.")
-            },
+            title = { Text(text = "Czy na pewno usunąć wyścig?") },
+            text = { Text("Ta operacja jest nieodwracalna.") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -468,15 +452,19 @@ fun AddRaceScreen(
                             try {
                                 if (selectedRaceId != null) {
                                     F1Repository.deleteRace(selectedRaceId!!)
+                                    refreshData()
                                     withContext(Dispatchers.Main) {
                                         snackbarHostState.showSnackbar("Wyścig został usunięty")
+                                        isDeleteConfirmationDialogOpen = false
                                     }
                                 }
                             } catch (e: Exception) {
                                 Log.e("AddRaceScreen", "Error deleting race", e)
+                                withContext(Dispatchers.Main) {
+                                    snackbarHostState.showSnackbar("Błąd podczas usuwania wyścigu")
+                                }
                             }
                         }
-                        isDeleteConfirmationDialogOpen = false
                     }
                 ) {
                     Text(text = "Tak")

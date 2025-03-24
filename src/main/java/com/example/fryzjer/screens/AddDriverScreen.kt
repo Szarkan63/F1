@@ -31,43 +31,27 @@ fun AddDriverScreen(
 ) {
     val context = LocalContext.current
 
-    // Zmienne stanu dla kierowcy
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
     var nationality by remember { mutableStateOf("") }
     var dateOfBirth by remember { mutableStateOf("") }
-
-    // Zmienne stanu dla zespołu
     var selectedTeam by remember { mutableStateOf<Team?>(null) }
     var isTeamMenuExpanded by remember { mutableStateOf(false) }
-    var teams by remember { mutableStateOf<List<Team>>(emptyList()) }
-
-    // Zmienne stanu dla kalendarza
     var isDatePickerOpen by remember { mutableStateOf(false) }
-
-    // Zmienne stanu dla Snackbar (komunikat o błędzie)
     val snackbarHostState = remember { SnackbarHostState() }
-
-    // Zmienne stanu dla dialogu
     var isDialogOpen by remember { mutableStateOf(false) }
     var isEditMode by remember { mutableStateOf(false) }
     var selectedDriverId by remember { mutableStateOf<String?>(null) }
-
-    // Zmienne stanu dla dialogu usuwania
     var isDeleteDialogOpen by remember { mutableStateOf(false) }
     var isDeleteConfirmationDialogOpen by remember { mutableStateOf(false) }
 
-    // Lista kierowców
-    val drivers = remember { mutableStateListOf<Driver>() }
+    var drivers by remember { mutableStateOf<List<Driver>>(emptyList()) }
+    var teams by remember { mutableStateOf<List<Team>>(emptyList()) }
 
-    // Pobierz listę zespołów przy pierwszym uruchomieniu
-    LaunchedEffect(Unit) {
+    suspend fun refreshData() {
         try {
-            // Pobierz kierowców
             val driverResponse = F1Repository.getAllDrivers()
-            drivers.addAll(driverResponse.decodeList<Driver>())
-
-            // Pobierz zespoły
+            drivers = driverResponse.decodeList<Driver>()
             val teamResponse = F1Repository.getAllTeams()
             teams = teamResponse.decodeList<Team>()
         } catch (e: Exception) {
@@ -78,7 +62,10 @@ fun AddDriverScreen(
         }
     }
 
-    // Obsługa menu bocznego
+    LaunchedEffect(Unit) {
+        refreshData()
+    }
+
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
@@ -124,7 +111,6 @@ fun AddDriverScreen(
                     onClick = {
                         isEditMode = false
                         isDialogOpen = true
-                        // Resetuj wybrane wartości przy otwieraniu dialogu
                         firstName = ""
                         lastName = ""
                         nationality = ""
@@ -163,7 +149,6 @@ fun AddDriverScreen(
         }
     }
 
-    // Dialog do dodawania/modyfikacji kierowcy
     if (isDialogOpen) {
         AlertDialog(
             onDismissRequest = { isDialogOpen = false },
@@ -214,7 +199,6 @@ fun AddDriverScreen(
                         }
                     }
 
-                    // Sekcja wyboru zespołu
                     Text(
                         text = "Wybierz zespół",
                         style = MaterialTheme.typography.headlineSmall,
@@ -263,7 +247,6 @@ fun AddDriverScreen(
                         }
                     }
 
-                    // Sekcja formularza dla kierowcy
                     Text(
                         text = "Dane kierowcy",
                         style = MaterialTheme.typography.headlineSmall,
@@ -341,24 +324,26 @@ fun AddDriverScreen(
                             return@Button
                         }
 
-                        val driverInput = DriverInput(
-                            first_name = firstName,
-                            last_name = lastName,
-                            nationality = nationality,
-                            date_of_birth = dateOfBirth,
-                            team_id = selectedTeam?.team_id // Może być null
-                        )
-
                         CoroutineScope(Dispatchers.IO).launch {
                             try {
+                                val driverInput = DriverInput(
+                                    first_name = firstName,
+                                    last_name = lastName,
+                                    nationality = nationality,
+                                    date_of_birth = dateOfBirth,
+                                    team_id = selectedTeam?.team_id
+                                )
+
                                 if (isEditMode && selectedDriverId != null) {
                                     F1Repository.updateDriver(selectedDriverId!!, driverInput)
+                                    refreshData()
                                     withContext(Dispatchers.Main) {
                                         snackbarHostState.showSnackbar("Kierowca został zaktualizowany")
                                         isDialogOpen = false
                                     }
                                 } else {
                                     F1Repository.createDriver(driverInput)
+                                    refreshData()
                                     withContext(Dispatchers.Main) {
                                         snackbarHostState.showSnackbar("Kierowca został dodany")
                                         isDialogOpen = false
@@ -367,7 +352,7 @@ fun AddDriverScreen(
                             } catch (e: Exception) {
                                 Log.e("AddDriverScreen", "Error saving driver", e)
                                 withContext(Dispatchers.Main) {
-                                    snackbarHostState.showSnackbar("Błąd podczas zapisywania danych")
+                                    snackbarHostState.showSnackbar("Błąd podczas zapisywania danych: ${e.message}")
                                 }
                             }
                         }
@@ -377,16 +362,13 @@ fun AddDriverScreen(
                 }
             },
             dismissButton = {
-                Button(
-                    onClick = { isDialogOpen = false }
-                ) {
+                Button(onClick = { isDialogOpen = false }) {
                     Text(text = "Anuluj")
                 }
             }
         )
     }
 
-    // Dialog do wyboru kierowcy do usunięcia
     if (isDeleteDialogOpen) {
         AlertDialog(
             onDismissRequest = { isDeleteDialogOpen = false },
@@ -448,16 +430,13 @@ fun AddDriverScreen(
                 }
             },
             dismissButton = {
-                Button(
-                    onClick = { isDeleteDialogOpen = false }
-                ) {
+                Button(onClick = { isDeleteDialogOpen = false }) {
                     Text(text = "Anuluj")
                 }
             }
         )
     }
 
-    // Dialog potwierdzenia usunięcia kierowcy
     if (isDeleteConfirmationDialogOpen) {
         AlertDialog(
             onDismissRequest = { isDeleteConfirmationDialogOpen = false },
@@ -470,6 +449,7 @@ fun AddDriverScreen(
                             try {
                                 if (selectedDriverId != null) {
                                     F1Repository.deleteDriver(selectedDriverId!!)
+                                    refreshData()
                                     withContext(Dispatchers.Main) {
                                         snackbarHostState.showSnackbar("Kierowca został usunięty")
                                         isDeleteConfirmationDialogOpen = false
@@ -478,7 +458,7 @@ fun AddDriverScreen(
                             } catch (e: Exception) {
                                 Log.e("AddDriverScreen", "Error deleting driver", e)
                                 withContext(Dispatchers.Main) {
-                                    snackbarHostState.showSnackbar("Błąd podczas usuwania kierowcy")
+                                    snackbarHostState.showSnackbar("Błąd podczas usuwania kierowcy: ${e.message}")
                                 }
                             }
                         }
@@ -488,9 +468,7 @@ fun AddDriverScreen(
                 }
             },
             dismissButton = {
-                Button(
-                    onClick = { isDeleteConfirmationDialogOpen = false }
-                ) {
+                Button(onClick = { isDeleteConfirmationDialogOpen = false }) {
                     Text(text = "Anuluj")
                 }
             }

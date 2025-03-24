@@ -42,17 +42,24 @@ fun AddTeamScreen(
     var isDeleteDialogOpen by remember { mutableStateOf(false) }
     var isDeleteConfirmationDialogOpen by remember { mutableStateOf(false) }
 
-    // Lista zespołów
-    val teams = remember { mutableStateListOf<Team>() }
+    var teams by remember { mutableStateOf<List<Team>>(emptyList()) }
 
-
-    LaunchedEffect(Unit) {
+    // Funkcja do pobierania zespołów
+    suspend fun refreshTeams() {
         try {
             val teamResponse = F1Repository.getAllTeams()
-            teams.addAll(teamResponse.decodeList<Team>())
+            teams = teamResponse.decodeList<Team>()
         } catch (e: Exception) {
             Log.e("AddTeamScreen", "Error fetching teams", e)
+            withContext(Dispatchers.Main) {
+                snackbarHostState.showSnackbar("Błąd podczas ładowania zespołów")
+            }
         }
+    }
+
+    // Pobierz zespoły przy pierwszym uruchomieniu
+    LaunchedEffect(Unit) {
+        refreshTeams()
     }
 
     // Obsługa menu bocznego
@@ -259,12 +266,14 @@ fun AddTeamScreen(
                             try {
                                 if (isEditMode && selectedTeamId != null) {
                                     F1Repository.updateTeam(selectedTeamId!!, teamInput)
+                                    refreshTeams()
                                     withContext(Dispatchers.Main) {
                                         snackbarHostState.showSnackbar("Zespół został zaktualizowany")
                                         isDialogOpen = false
                                     }
                                 } else {
                                     F1Repository.createTeam(teamInput)
+                                    refreshTeams()
                                     withContext(Dispatchers.Main) {
                                         snackbarHostState.showSnackbar("Zespół został dodany")
                                         isDialogOpen = false
@@ -383,6 +392,7 @@ fun AddTeamScreen(
                             try {
                                 if (selectedTeamId != null) {
                                     F1Repository.deleteTeam(selectedTeamId!!)
+                                    refreshTeams()
                                     withContext(Dispatchers.Main) {
                                         snackbarHostState.showSnackbar("Zespół został usunięty")
                                         isDeleteConfirmationDialogOpen = false

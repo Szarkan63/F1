@@ -80,6 +80,23 @@ data class DriverInput(
     val team_id: String? = null
 )
 
+@Serializable
+data class RaceResult(
+    val result_id: String,
+    val race_id: String,
+    val driver_id: String,
+    val position: Int,
+    val points: Int
+)
+
+@Serializable
+data class RaceResultInput(
+    val race_id: String,
+    val driver_id: String,
+    val position: Int,
+    val points: Int
+)
+
 object F1Repository {
 
     // Operacje na wyścigach
@@ -302,6 +319,60 @@ object F1Repository {
             Log.d("F1Repository", "Successfully deleted driver $driverId")
         } catch (e: Exception) {
             Log.e("F1Repository", "Error deleting driver $driverId", e)
+            throw e
+        }
+    }
+    // Operacje na wynikach wyścigów w F1Repository
+    suspend fun createRaceResult(result: RaceResultInput): PostgrestResult {
+        return try {
+            SupabaseClient.supabase
+                .from("RaceResults")
+                .insert(result)
+        } catch (e: Exception) {
+            Log.e("F1Repository", "Error creating race result", e)
+            throw e
+        }
+    }
+
+    suspend fun getAllRaceResults(): PostgrestResult {
+        return try {
+            SupabaseClient.supabase
+                .from("RaceResults")
+                .select()
+        } catch (e: Exception) {
+            Log.e("F1Repository", "Error fetching race results", e)
+            throw e
+        }
+    }
+
+    suspend fun updateRaceResult(resultId: String, result: RaceResultInput) {
+        try {
+            SupabaseClient.supabase
+                .from("RaceResults")
+                .update(result) {
+                    filter {
+                        eq("result_id", resultId)
+                    }
+                }
+            Log.d("F1Repository", "Successfully updated race result $resultId")
+        } catch (e: Exception) {
+            Log.e("F1Repository", "Error updating race result $resultId", e)
+            throw e
+        }
+    }
+
+    suspend fun deleteRaceResult(resultId: String) {
+        try {
+            SupabaseClient.supabase
+                .from("RaceResults")
+                .delete {
+                    filter {
+                        eq("result_id", resultId)
+                    }
+                }
+            Log.d("F1Repository", "Successfully deleted race result $resultId")
+        } catch (e: Exception) {
+            Log.e("F1Repository", "Error deleting race result $resultId", e)
             throw e
         }
     }
