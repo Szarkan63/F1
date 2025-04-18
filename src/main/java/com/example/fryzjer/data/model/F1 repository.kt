@@ -2,6 +2,7 @@ package com.example.fryzjer.data.model
 
 import android.util.Log
 import com.example.fryzjer.data.network.SupabaseClient
+import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.result.PostgrestResult
 import kotlinx.serialization.Serializable
@@ -95,6 +96,22 @@ data class RaceResultInput(
     val driver_id: String,
     val position: Int,
     val points: Int
+)
+@Serializable
+data class Article(
+    val article_id: String,
+    val title: String,
+    val content: String,
+    val created_at: String,
+    val updated_at: String?,
+    val author_id: String?
+)
+
+@Serializable
+data class ArticleInput(
+    val title: String,
+    val content: String,
+    val author_id: String? = null
 )
 
 object F1Repository {
@@ -376,5 +393,110 @@ object F1Repository {
             throw e
         }
     }
+    // Dodaj te metody do obiektu F1Repository
+    suspend fun createArticle(article: ArticleInput): PostgrestResult {
+        return try {
+            SupabaseClient.supabase
+                .from("Articles")
+                .insert(article)
+        } catch (e: Exception) {
+            Log.e("F1Repository", "Error creating article", e)
+            throw e
+        }
+    }
+
+    suspend fun getAllArticles(): PostgrestResult {
+        return try {
+            SupabaseClient.supabase
+                .from("Articles")
+                .select()
+        } catch (e: Exception) {
+            Log.e("F1Repository", "Error fetching articles", e)
+            throw e
+        }
+    }
+
+    suspend fun updateArticle(articleId: String, article: ArticleInput) {
+        try {
+            SupabaseClient.supabase
+                .from("Articles")
+                .update(article) {
+                    filter {
+                        eq("article_id", articleId)
+                    }
+                }
+            Log.d("F1Repository", "Successfully updated article $articleId")
+        } catch (e: Exception) {
+            Log.e("F1Repository", "Error updating article $articleId", e)
+            throw e
+        }
+    }
+
+    suspend fun deleteArticle(articleId: String) {
+        try {
+            SupabaseClient.supabase
+                .from("Articles")
+                .delete {
+                    filter {
+                        eq("article_id", articleId)
+                    }
+                }
+            Log.d("F1Repository", "Successfully deleted article $articleId")
+        } catch (e: Exception) {
+            Log.e("F1Repository", "Error deleting article $articleId", e)
+            throw e
+        }
+    }
+    suspend fun getCurrentUserId(): String? {
+        return try {
+            val user = SupabaseClient.auth.retrieveUserForCurrentSession(updateSession = true)
+            user.id
+        } catch (e: Exception) {
+            Log.e("F1Repository", "Error getting current user ID", e)
+            null
+        }
+    }
+    suspend fun getArticleById(articleId: String): Article? {
+        return try {
+            val result = SupabaseClient.supabase
+                .from("Articles")
+                .select {
+                    filter {
+                        eq("article_id", articleId)
+                    }
+                }
+
+            result.decodeList<Article>().firstOrNull()
+        } catch (e: Exception) {
+            Log.e("F1Repository", "Error fetching article $articleId", e)
+            null
+        }
+    }
+    suspend fun getAuthorsInfo(authorIds: List<String>): Map<String, String> {
+        return try {
+            val result = mutableMapOf<String, String>()
+
+            // Use the admin auth client to retrieve users
+            val users = SupabaseClient.adminAuthClient.retrieveUsers()
+
+            // Filter users by the provided authorIds
+            users.forEach { user ->
+                val userId = user.id
+                if (authorIds.contains(userId)) {
+                    val firstName = user.userMetadata?.get("first_name")?.toString()?.trim('"') ?: "Nieznany"
+                    result[userId] = firstName
+                }
+            }
+
+            result
+        } catch (e: Exception) {
+            Log.e("F1Repository", "Error fetching authors info", e)
+            emptyMap()
+        }
+    }
+
 }
+
+
+
 

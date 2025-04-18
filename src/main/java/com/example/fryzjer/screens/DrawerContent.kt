@@ -26,7 +26,7 @@ fun DrawerContent(
     userId: String?,  // Receive userId from ViewModel
     modifier: Modifier = Modifier
 ) {
-    val adminId = "0b94d3b8-2509-4a95-934f-2434f075791b" // Replace with your actual admin user ID
+    val adminId = "c6a47c47-3e62-489e-9bdd-dc68f6f79775" // Replace with your actual admin user ID
     val isAdmin = userId == adminId // Check if the user is an admin
 
     // Log the current userId and adminId
@@ -81,6 +81,12 @@ fun DrawerContent(
             icon = Icons.Rounded.Flag,
             label = "Wyniki wyścigów",
             onClick = { navController.navigate("RaceResultsScreen") },
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
+        DrawerItem(
+            icon = Icons.Rounded.Article,
+            label = "Artykuły",
+            onClick = { navController.navigate("ArticlesScreen") },
             modifier = Modifier.padding(vertical = 8.dp)
         )
 

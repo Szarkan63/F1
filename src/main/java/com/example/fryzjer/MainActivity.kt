@@ -13,15 +13,11 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Surface
 import androidx.compose.material3.rememberDrawerState
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.fryzjer.data.network.SupabaseClient
 import com.example.fryzjer.screens.AdminPanelScreen
 import com.example.fryzjer.screens.DrawerContent
 import com.example.fryzjer.screens.HomeScreen
@@ -31,10 +27,14 @@ import com.example.fryzjer.screens.ReservationsScreen
 import com.example.fryzjer.ui.RegisterScreen
 import com.example.fryzjer.ui.theme.FryzjerTheme
 import com.example.fryzjer.data.model.UserViewModel
+import com.example.fryzjer.screens.AddArticleScreen
 import com.example.fryzjer.screens.AddDriverScreen
 import com.example.fryzjer.screens.AddRaceScreen
 import com.example.fryzjer.screens.AddResultsScreen
 import com.example.fryzjer.screens.AddTeamScreen
+import com.example.fryzjer.screens.ArticleDetailScreen
+import com.example.fryzjer.screens.ArticlesScreen
+import com.example.fryzjer.screens.CreateArticleScreen
 import com.example.fryzjer.screens.DriverStandingsScreen
 import com.example.fryzjer.screens.RaceResultsScreen
 import com.example.fryzjer.screens.RacesScreen
@@ -111,6 +111,19 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("RaceResultsScreen") {
                                 RaceResultsScreen(navController = navController)
+                            }
+                            composable("AddArticleScreen") {
+                                AddArticleScreen(navController = navController)
+                            }
+                            composable("createArticle") {
+                                CreateArticleScreen(navController)
+                            }
+                            composable("ArticlesScreen") {
+                                ArticlesScreen(navController)
+                            }
+                            composable("articleDetail/{articleId}") { backStackEntry ->
+                                val articleId = backStackEntry.arguments?.getString("articleId")
+                                ArticleDetailScreen(navController, articleId)
                             }
                         }
                     }

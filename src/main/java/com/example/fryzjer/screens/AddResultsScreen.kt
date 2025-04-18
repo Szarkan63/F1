@@ -60,6 +60,16 @@ fun AddResultsScreen(
         }
     }
 
+    // Funkcja sprawdzająca czy pozycja jest już zajęta
+    fun isPositionTaken(position: Int): Boolean {
+        return selectedRace?.let { race ->
+            results.any { result ->
+                result.race_id == race.race_id && result.position == position &&
+                        (isEditMode && selectedResultId != result.result_id || !isEditMode)
+            }
+        } ?: false
+    }
+
     // Funkcja odświeżająca dane
     suspend fun refreshData() {
         try {
@@ -250,6 +260,9 @@ fun AddResultsScreen(
                                     onClick = {
                                         selectedRace = race
                                         isRaceMenuExpanded = false
+                                        // Resetuj wybór kierowcy i pozycji przy zmianie wyścigu
+                                        selectedDriver = null
+                                        position = ""
                                     }
                                 )
                             }
@@ -335,15 +348,22 @@ fun AddResultsScreen(
                         },
                         label = { Text("Pozycja (1-20)*") },
                         modifier = Modifier.fillMaxWidth(),
-                        isError = position.isNotEmpty() && (position.toIntOrNull() == null || position.toInt() !in 1..20),
+                        isError = position.isNotEmpty() && (position.toIntOrNull() == null ||
+                                position.toInt() !in 1..20 ||
+                                isPositionTaken(position.toIntOrNull() ?: 0)),
                         supportingText = {
-                            if (position.isNotEmpty() && (position.toIntOrNull() == null || position.toInt() !in 1..20)) {
-                                Text("Pozycja musi być liczbą od 1 do 20")
+                            if (position.isNotEmpty()) {
+                                when {
+                                    position.toIntOrNull() == null -> Text("Pozycja musi być liczbą od 1 do 20")
+                                    position.toInt() !in 1..20 -> Text("Pozycja musi być liczbą od 1 do 20")
+                                    isPositionTaken(position.toInt()) -> Text("Ta pozycja jest już zajęta w tym wyścigu")
+                                    else -> Text("Zdobyte punkty: ${calculatePoints(position.toInt())}")
+                                }
                             }
                         }
                     )
 
-                    if (position.isNotEmpty() && position.toIntOrNull() in 1..20) {
+                    if (position.isNotEmpty() && position.toIntOrNull() in 1..20 && !isPositionTaken(position.toInt())) {
                         Text(
                             text = "Zdobyte punkty: ${calculatePoints(position.toInt())}",
                             style = MaterialTheme.typography.bodyLarge,
@@ -366,6 +386,13 @@ fun AddResultsScreen(
                         if (positionInt == null || positionInt !in 1..20) {
                             CoroutineScope(Dispatchers.Main).launch {
                                 snackbarHostState.showSnackbar("Pozycja musi być liczbą od 1 do 20")
+                            }
+                            return@Button
+                        }
+
+                        if (isPositionTaken(positionInt)) {
+                            CoroutineScope(Dispatchers.Main).launch {
+                                snackbarHostState.showSnackbar("Ta pozycja jest już zajęta w tym wyścigu")
                             }
                             return@Button
                         }

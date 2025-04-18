@@ -132,12 +132,12 @@ fun AddDriverScreen(
                     Text(text = "Modyfikuj kierowcę")
                 }
 
-                Button(
-                    onClick = { isDeleteDialogOpen = true },
-                    modifier = Modifier.padding(bottom = 16.dp)
-                ) {
-                    Text(text = "Usuń kierowcę")
-                }
+//                Button(
+//                    onClick = { isDeleteDialogOpen = true },
+//                    modifier = Modifier.padding(bottom = 16.dp)
+//                ) {
+//                    Text(text = "Usuń kierowcę")
+//                }
 
                 Button(
                     onClick = { navController.popBackStack() },

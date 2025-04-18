@@ -116,6 +116,16 @@ fun AdminPanelScreen(
                         }
                         .padding(8.dp)
                 )
+                Text(
+                    text = "Dodaj artykuły",
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier
+                        .clickable {
+                            // Przejście do ekranu dodawania wyścigu
+                            navController.navigate("AddArticleScreen")
+                        }
+                        .padding(8.dp)
+                )
             }
         }
     }

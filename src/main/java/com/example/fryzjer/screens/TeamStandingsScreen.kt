@@ -57,24 +57,19 @@ fun TeamStandingsScreen(
             val drivers = F1Repository.getAllDrivers().decodeList<Driver>()
             val teams = F1Repository.getAllTeams().decodeList<Team>()
 
-            // Oblicz punkty dla każdego zespołu (suma punktów dwóch najlepszych kierowców)
+            // Oblicz punkty dla każdego zespołu (suma punktów wszystkich kierowców)
             val teamPointsMap = mutableMapOf<String, Int>()
 
             // Najpierw zgrupuj kierowców po teamach
             val driversByTeam = drivers.groupBy { it.team_id }
 
-            // Dla każdego zespołu oblicz sumę punktów dwóch najlepszych kierowców
+            // Dla każdego zespołu oblicz sumę punktów wszystkich kierowców
             driversByTeam.forEach { (teamId, teamDrivers) ->
                 if (teamId != null) {
-                    val teamPoints = teamDrivers
-                        .map { driver ->
-                            results.filter { it.driver_id == driver.driver_id }
-                                .sumOf { it.points }
-                        }
-                        .sortedDescending()
-                        .take(2) // Bierzemy dwóch najlepszych kierowców
-                        .sum()
-
+                    val teamPoints = teamDrivers.sumOf { driver ->
+                        results.filter { it.driver_id == driver.driver_id }
+                            .sumOf { it.points }
+                    }
                     teamPointsMap[teamId] = teamPoints
                 }
             }

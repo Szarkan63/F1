@@ -18,7 +18,7 @@ android {
     if (propertiesFile.exists()) {
         localProperties.load(propertiesFile.inputStream())
     }
-
+    val service_key: String = localProperties.getProperty("service_key") ?: ""
     val key: String = localProperties.getProperty("supabaseKey") ?: ""
     val url: String = localProperties.getProperty("supabaseUrl") ?: ""
 
@@ -36,6 +36,7 @@ android {
         }
         buildConfigField("String", "supabaseKey", "\"${key}\"")
         buildConfigField("String", "supabaseUrl", "\"${url}\"")
+        buildConfigField("String", "service_key", "\"${service_key}\"")
     }
 
     buildTypes {
